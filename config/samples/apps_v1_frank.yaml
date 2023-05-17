@@ -1,0 +1,9 @@
+apiVersion: apps.frank.com/v1
+kind: Frank
+metadata:
+  name: frank-sample
+spec:
+  # TODO(user): Add fields here
+  image: nginx:alpine
+  pdl: backend
+  replica: 2

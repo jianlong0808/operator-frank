@@ -1,0 +1,96 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: franks.apps.frank.com
+spec:
+  group: apps.frank.com
+  names:
+    kind: Frank
+    listKind: FrankList
+    plural: franks
+    singular: frank
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.realReplica
+      name: RealReplica
+      type: integer
+    - jsonPath: .spec.pdl
+      name: Pdl
+      priority: 1
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    - jsonPath: .spec.image
+      name: Image
+      type: string
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: Frank is the Schema for the franks API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: FrankSpec defines the desired state of Frank
+            properties:
+              image:
+                description: Image,Replica is an example field of Frank. Edit frank_types.go
+                  to remove/update
+                minLength: 0
+                type: string
+              pdl:
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                  Important: Run "make" to regenerate code after modifying this file'
+                enum:
+                - backend
+                - frontend
+                type: string
+              replica:
+                format: int32
+                minimum: 0
+                type: integer
+            required:
+            - pdl
+            type: object
+          status:
+            description: FrankStatus defines the observed state of Frank
+            properties:
+              realReplica:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
+                format: int32
+                minimum: 0
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      scale:
+        labelSelectorPath: .spec.selector
+        specReplicasPath: .spec.replica
+        statusReplicasPath: .status.realReplica
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

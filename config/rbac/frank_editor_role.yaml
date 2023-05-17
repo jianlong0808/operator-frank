@@ -1,0 +1,24 @@
+# permissions for end users to edit franks.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: frank-editor-role
+rules:
+- apiGroups:
+  - apps.frank.com
+  resources:
+  - franks
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps.frank.com
+  resources:
+  - franks/status
+  verbs:
+  - get

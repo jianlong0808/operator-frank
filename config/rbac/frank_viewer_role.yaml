@@ -1,0 +1,20 @@
+# permissions for end users to view franks.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: frank-viewer-role
+rules:
+- apiGroups:
+  - apps.frank.com
+  resources:
+  - franks
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps.frank.com
+  resources:
+  - franks/status
+  verbs:
+  - get
