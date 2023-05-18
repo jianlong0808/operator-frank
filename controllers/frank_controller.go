@@ -98,6 +98,7 @@ func (r *FrankReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 				return ctrl.Result{RequeueAfter: time.Second * 10}, err
 			}
 		}
+		return ctrl.Result{}, err
 	}
 
 	//获取deployment
