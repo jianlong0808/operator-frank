@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"time"
 
 	appsv1 "github.com/jianlong0808/operator-frank/api/v1"
 	k8sappsv1 "k8s.io/api/apps/v1"
@@ -46,6 +47,7 @@ type FrankReconciler struct {
 //+kubebuilder:rbac:groups=apps.frank.com,resources=franks/finalizers,verbs=update
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=events,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -67,6 +69,37 @@ func (r *FrankReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+
+	frankFinalizerName := "finalizer.frank.com"
+
+	//判断frank对象是否被删除,如果值为0,则表示frank对象没有在删除, 此时就需要将finalizer添加到frank对象中
+	//如果值为非0,则表示frank对象正在被删除,此时应该执行资源清理操作, 如果清理成功, 就将finalizer从frank对象中删除, 删除finalier字段后资源会自动清理
+	if frank.ObjectMeta.DeletionTimestamp.IsZero() {
+		if !containsString(frank.ObjectMeta.Finalizers, frankFinalizerName) {
+			Log.Info("添加 Finalizer")
+			frank.ObjectMeta.Finalizers = append(frank.ObjectMeta.Finalizers, frankFinalizerName)
+			if err := r.Update(ctx, frank); err != nil {
+				Log.Error(err, "添加 Finalizer 失败")
+				return ctrl.Result{}, err
+			}
+		}
+	} else {
+		if containsString(frank.ObjectMeta.Finalizers, frankFinalizerName) {
+			Log.Info("回调 Delete 资源成功")
+			if err := r.deleteHook(frank); err != nil {
+				//如果删除失败, 10秒后重试
+				Log.Error(err, "回调 Delete 资源失败")
+				return ctrl.Result{RequeueAfter: time.Second * 10}, err
+			}
+			frank.ObjectMeta.Finalizers = removeString(frank.ObjectMeta.Finalizers, frankFinalizerName)
+			if err := r.Update(ctx, frank); err != nil {
+				Log.Error(err, "删除 Finalizer 失败")
+				//如果删除失败, 10秒后重试
+				return ctrl.Result{RequeueAfter: time.Second * 10}, err
+			}
+		}
+	}
+
 	//获取deployment
 	err = r.Get(ctx, req.NamespacedName, deployment)
 
@@ -201,5 +234,42 @@ func (r *FrankReconciler) CreateDeployment(ctx context.Context, frank *appsv1.Fr
 		return err
 	}
 
+	return nil
+}
+
+// containsString
+// @Description: 判断slice中是否包含s
+// @param slice
+// @param s
+// @return bool
+func containsString(slice []string, s string) bool {
+	for _, item := range slice {
+		if item == s {
+			return true
+		}
+	}
+	return false
+}
+
+// removeString
+// @Description: 删除slice中的s
+// @param slice
+// @param s
+// @return result
+func removeString(slice []string, s string) (result []string) {
+	for _, item := range slice {
+		if item != s {
+			result = append(result, item)
+		}
+	}
+	return
+}
+
+// deleteHook
+// @Description: 删除钩子
+// @receiver r
+// @param frank
+// @return error
+func (r *FrankReconciler) deleteHook(frank *appsv1.Frank) error {
 	return nil
 }
