@@ -271,5 +271,6 @@ func removeString(slice []string, s string) (result []string) {
 // @param frank
 // @return error
 func (r *FrankReconciler) deleteHook(frank *appsv1.Frank) error {
+	//TODO(user): your logic here
 	return nil
 }
